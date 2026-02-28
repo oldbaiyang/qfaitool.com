@@ -5,8 +5,8 @@
 export const tools = [
     {
         id: 'domain-converter',
-        name: '多级域名转一级域名',
-        description: '批量将多级域名（如 a.b.example.com）提取为一级域名（如 example.com），支持特殊后缀处理',
+        nameKey: 'tool.domain-converter.name',
+        descKey: 'tool.domain-converter.desc',
         icon: '🌐',
         tags: ['域名', '网络'],
         route: '/domain-converter',
@@ -14,7 +14,7 @@ export const tools = [
 ];
 
 /**
- * 从所有工具中提取全部标签（去重）
+ * 从所有工具中提取全部标签（去重，返回原始 key）
  */
 export function getAllTags() {
     const tagSet = new Set();
