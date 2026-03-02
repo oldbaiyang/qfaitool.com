@@ -11,6 +11,14 @@ export const tools = [
         tags: ['域名', '网络'],
         route: '/domain-converter',
     },
+    {
+        id: 'whitelist-diff',
+        nameKey: 'tool.whitelist-diff.name',
+        descKey: 'tool.whitelist-diff.desc',
+        icon: '📋',
+        tags: ['安全', '网络'],
+        route: '/whitelist-diff',
+    },
 ];
 
 /**

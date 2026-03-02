@@ -3,6 +3,7 @@ import { Router } from './router.js';
 import { renderHeader, bindHeaderEvents } from './components/header.js';
 import { renderHome } from './pages/home.js';
 import { renderDomainConverter } from './pages/domain-converter.js';
+import { renderWhitelistDiff } from './pages/whitelist-diff.js';
 import { initTheme } from './theme.js';
 import { setLang, t } from './i18n.js';
 
@@ -18,6 +19,10 @@ const pageMeta = {
   '/domain-converter': () => ({
     title: `${t('dcTitle')} | QFAITool`,
     desc: t('dcDesc'),
+  }),
+  '/whitelist-diff': () => ({
+    title: `${t('wdTitle')} | QFAITool`,
+    desc: t('wdDesc'),
   }),
 };
 
@@ -41,7 +46,8 @@ function renderLayout(pageRenderer, path) {
 // 注册路由
 router
   .register('/', (path) => renderLayout(renderHome, path))
-  .register('/domain-converter', (path) => renderLayout(renderDomainConverter, path));
+  .register('/domain-converter', (path) => renderLayout(renderDomainConverter, path))
+  .register('/whitelist-diff', (path) => renderLayout(renderWhitelistDiff, path));
 
 // 语言切换（事件委托，切换后重新渲染当前页面）
 document.addEventListener('change', (e) => {
