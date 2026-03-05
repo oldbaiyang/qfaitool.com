@@ -26,6 +26,13 @@ const SECOND_LEVEL_TLDS = new Set([
   'com.tr', 'net.tr', 'org.tr', 'edu.tr', 'gov.tr',
 ]);
 
+/**
+ * 判断是否为 IPv4 地址
+ */
+function isIPv4(str) {
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(str);
+}
+
 function toRootDomain(input) {
   let domain = input.trim();
   if (!domain) return '';
@@ -33,6 +40,8 @@ function toRootDomain(input) {
   domain = domain.split('/')[0].split('?')[0].split('#')[0];
   domain = domain.replace(/:\d+$/, '');
   domain = domain.replace(/\.+$/, '');
+  // IP 地址不做转换，直接返回
+  if (isIPv4(domain)) return domain;
   const parts = domain.toLowerCase().split('.');
   if (parts.length <= 2) return domain.toLowerCase();
   const lastTwo = `${parts[parts.length - 2]}.${parts[parts.length - 1]}`;
@@ -159,6 +168,8 @@ function bindConverterEvents(router) {
       .map((l) => {
         let d = l.trim();
         if (!d) return '';
+        // IP 地址不加*
+        if (isIPv4(d)) return d;
         if (d.startsWith('*.')) d = d.slice(2);
         if (d.endsWith('*')) d = d.slice(0, -1);
         return `*.${d}*`;
