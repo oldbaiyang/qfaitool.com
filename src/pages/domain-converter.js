@@ -52,14 +52,17 @@ function toRootDomain(input) {
 }
 
 function convertDomains(text) {
-  return text
+  const results = text
     .split('\n')
     .map((line) => {
       const trimmed = line.trim();
       if (!trimmed) return '';
       return toRootDomain(trimmed);
     })
-    .join('\n');
+    .filter((l) => l);
+  const ips = results.filter((l) => isIPv4(l));
+  const domains = results.filter((l) => !isIPv4(l));
+  return [...ips, ...domains].join('\n');
 }
 
 /**
@@ -77,7 +80,9 @@ export function renderDomainConverter(router) {
 
       <div class="converter-wrapper">
         <div class="converter-panel">
-          <label class="converter-panel__label">${t('inputLabel')}</label>
+          <label class="converter-panel__label">${t('inputLabel')}
+            <button class="btn btn--small btn--outline" id="btn-test" style="margin-left:8px;font-size:12px;padding:2px 8px;">${t('btnTest')}</button>
+          </label>
           <textarea
             id="input-domains"
             class="converter-panel__textarea"
@@ -126,6 +131,19 @@ export function renderDomainConverter(router) {
 function bindConverterEvents(router) {
   document.getElementById('btn-back').addEventListener('click', () => {
     router.navigate('');
+  });
+
+  document.getElementById('btn-test').addEventListener('click', () => {
+    document.getElementById('input-domains').value = `1.1.1.1
+2.2.2.2
+a.com
+a.b.com
+a.b.c.com
+3.3.3.3
+a.b.c.d.com.cn
+4.4.4.4
+a.b.c.d.e.org.uk
+5.5.5.5`;
   });
 
   document.getElementById('btn-convert').addEventListener('click', () => {
