@@ -6,6 +6,9 @@
 import jsQR from 'jsqr';
 import { t } from '../i18n.js';
 
+const HISTORY_KEY = 'qr-history';
+const MAX_HISTORY = 20;
+
 function showToast(msg) {
     const toast = document.getElementById('toast');
     toast.textContent = msg;
@@ -13,9 +16,44 @@ function showToast(msg) {
     setTimeout(() => toast.classList.remove('toast--visible'), 2000);
 }
 
-/**
- * 用 jsQR 在指定缩放比例下尝试识别
- */
+/** 读取解码历史 */
+function getHistory() {
+    try {
+        return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    } catch { return []; }
+}
+
+/** 保存一条解码记录 */
+function saveHistory(result, thumbnail) {
+    const history = getHistory();
+    history.unshift({
+        result,
+        thumbnail,
+        time: Date.now(),
+    });
+    if (history.length > MAX_HISTORY) history.length = MAX_HISTORY;
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
+/** 清空历史 */
+function clearHistory() {
+    localStorage.removeItem(HISTORY_KEY);
+}
+
+/** 格式化时间 */
+function formatTime(ts) {
+    const d = new Date(ts);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** 判断是否为 URL */
+function isUrl(s) {
+    try { new URL(s); return true; } catch { return false; }
+}
+
+// ========== 解码引擎 ==========
+
 function tryJsQR(img, scale) {
     const w = Math.round(img.width * scale);
     const h = Math.round(img.height * scale);
@@ -29,9 +67,6 @@ function tryJsQR(img, scale) {
     return code ? code.data : null;
 }
 
-/**
- * 用 jsQR 做二值化增强后尝试识别
- */
 function tryJsQRBinarized(img) {
     const canvas = document.createElement('canvas');
     canvas.width = img.width;
@@ -49,11 +84,8 @@ function tryJsQRBinarized(img) {
     return code ? code.data : null;
 }
 
-/**
- * 多策略解码：BarcodeDetector → jsQR 多分辨率 → jsQR 二值化
- */
 async function decodeImage(img) {
-    // 策略 1：浏览器原生 BarcodeDetector（Chrome/Edge，识别能力最强）
+    // 策略 1：浏览器原生 BarcodeDetector
     if ('BarcodeDetector' in window) {
         try {
             const detector = new BarcodeDetector({ formats: ['qr_code'] });
@@ -62,7 +94,7 @@ async function decodeImage(img) {
         } catch { /* fall through */ }
     }
 
-    // 策略 2：jsQR 多分辨率尝试
+    // 策略 2：jsQR 多分辨率
     const scales = [1, 0.75, 0.5, 1.5, 2];
     for (const scale of scales) {
         const result = tryJsQR(img, scale);
@@ -73,44 +105,81 @@ async function decodeImage(img) {
     return tryJsQRBinarized(img);
 }
 
-/**
- * 将图片文件加载为 Image 元素并识别
- */
 function processImage(file) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = async () => {
+            // 缩略图
+            const thumbCanvas = document.createElement('canvas');
+            const thumbSize = 80;
+            const ratio = Math.min(thumbSize / img.width, thumbSize / img.height, 1);
+            thumbCanvas.width = Math.round(img.width * ratio);
+            thumbCanvas.height = Math.round(img.height * ratio);
+            thumbCanvas.getContext('2d').drawImage(img, 0, 0, thumbCanvas.width, thumbCanvas.height);
+
+            // 预览图
             const previewCanvas = document.createElement('canvas');
             const maxPreview = 400;
-            const ratio = Math.min(maxPreview / img.width, maxPreview / img.height, 1);
-            previewCanvas.width = Math.round(img.width * ratio);
-            previewCanvas.height = Math.round(img.height * ratio);
-            const pCtx = previewCanvas.getContext('2d');
-            pCtx.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
+            const pRatio = Math.min(maxPreview / img.width, maxPreview / img.height, 1);
+            previewCanvas.width = Math.round(img.width * pRatio);
+            previewCanvas.height = Math.round(img.height * pRatio);
+            previewCanvas.getContext('2d').drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
 
             const result = await decodeImage(img);
-            resolve({ result, imgSrc: previewCanvas.toDataURL() });
+            resolve({
+                result,
+                imgSrc: previewCanvas.toDataURL(),
+                thumbnail: thumbCanvas.toDataURL('image/jpeg', 0.6),
+            });
         };
         img.onerror = () => reject(new Error('Failed to load image'));
         img.src = URL.createObjectURL(file);
     });
 }
 
-/**
- * 从 DataTransfer 中提取图片文件
- */
 function getImageFile(dataTransfer) {
     const items = dataTransfer.items || [];
     for (const item of items) {
-        if (item.type.startsWith('image/')) {
-            return item.getAsFile();
-        }
+        if (item.type.startsWith('image/')) return item.getAsFile();
     }
     const files = dataTransfer.files || [];
     for (const file of files) {
         if (file.type.startsWith('image/')) return file;
     }
     return null;
+}
+
+// ========== 渲染 ==========
+
+function renderHistoryList() {
+    const history = getHistory();
+    const container = document.getElementById('qr-history-list');
+    const emptyEl = document.getElementById('qr-history-empty');
+    const clearBtn = document.getElementById('btn-clear-history');
+
+    if (history.length === 0) {
+        container.innerHTML = '';
+        emptyEl.style.display = '';
+        clearBtn.style.display = 'none';
+        return;
+    }
+
+    emptyEl.style.display = 'none';
+    clearBtn.style.display = '';
+    container.innerHTML = history.map((item) => {
+        const resultText = item.result.length > 80 ? item.result.slice(0, 80) + '...' : item.result;
+        const urlBadge = isUrl(item.result) ? `<span class="qr-history__badge">URL</span>` : '';
+        return `
+      <div class="qr-history__item" data-result="${item.result.replace(/"/g, '&quot;')}">
+        <img class="qr-history__thumb" src="${item.thumbnail}" alt="QR" />
+        <div class="qr-history__info">
+          <p class="qr-history__text">${resultText} ${urlBadge}</p>
+          <p class="qr-history__time">${formatTime(item.time)}</p>
+        </div>
+        <button class="qr-history__copy" title="${t('btnCopy')}">📋</button>
+      </div>
+    `;
+    }).join('');
 }
 
 export function renderQrScanner(router) {
@@ -124,6 +193,7 @@ export function renderQrScanner(router) {
         <p class="tool-page__desc">${t('qrDesc')}</p>
       </div>
 
+      <!-- 上传区 -->
       <div class="qr-drop-zone" id="qr-drop-zone">
         <div class="qr-drop-zone__content">
           <span class="qr-drop-zone__icon">📷</span>
@@ -141,7 +211,7 @@ export function renderQrScanner(router) {
         </div>
       </div>
 
-      <!-- 预览 + 结果 -->
+      <!-- 识别结果 -->
       <div class="qr-result" id="qr-result" style="display:none;">
         <div class="qr-result__preview">
           <img id="qr-preview-img" class="qr-result__img" src="" alt="QR code" />
@@ -157,11 +227,49 @@ export function renderQrScanner(router) {
           <div class="qr-result__actions" id="qr-result-actions"></div>
         </div>
       </div>
+
+      <!-- 功能介绍 -->
+      <div class="qr-features">
+        <h2 class="qr-features__title">${t('qrFeaturesTitle')}</h2>
+        <div class="qr-features__grid">
+          <div class="qr-feature-card">
+            <span class="qr-feature-card__icon">🔒</span>
+            <h3 class="qr-feature-card__title">${t('qrFeature1Title')}</h3>
+            <p class="qr-feature-card__desc">${t('qrFeature1Desc')}</p>
+          </div>
+          <div class="qr-feature-card">
+            <span class="qr-feature-card__icon">⚡</span>
+            <h3 class="qr-feature-card__title">${t('qrFeature2Title')}</h3>
+            <p class="qr-feature-card__desc">${t('qrFeature2Desc')}</p>
+          </div>
+          <div class="qr-feature-card">
+            <span class="qr-feature-card__icon">📋</span>
+            <h3 class="qr-feature-card__title">${t('qrFeature3Title')}</h3>
+            <p class="qr-feature-card__desc">${t('qrFeature3Desc')}</p>
+          </div>
+          <div class="qr-feature-card">
+            <span class="qr-feature-card__icon">🕐</span>
+            <h3 class="qr-feature-card__title">${t('qrFeature4Title')}</h3>
+            <p class="qr-feature-card__desc">${t('qrFeature4Desc')}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 最近解码历史 -->
+      <div class="qr-history">
+        <div class="qr-history__header">
+          <h2 class="qr-history__title">${t('qrHistoryTitle')}</h2>
+          <button class="btn btn--ghost btn--sm" id="btn-clear-history" style="display:none;">${t('qrHistoryClear')}</button>
+        </div>
+        <div class="qr-history__list" id="qr-history-list"></div>
+        <p class="qr-history__empty" id="qr-history-empty">${t('qrHistoryEmpty')}</p>
+      </div>
     </div>
 
     <div class="toast" id="toast"></div>
   `;
 
+    renderHistoryList();
     bindEvents(router);
 }
 
@@ -173,13 +281,11 @@ function bindEvents(router) {
     const dropZone = document.getElementById('qr-drop-zone');
     const fileInput = document.getElementById('qr-file-input');
 
-    // 文件上传
     fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) await handleFile(file);
     });
 
-    // 拖拽上传
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropZone.classList.add('qr-drop-zone--active');
@@ -194,7 +300,6 @@ function bindEvents(router) {
         if (file) await handleFile(file);
     });
 
-    // 剪切板粘贴按钮
     document.getElementById('btn-paste').addEventListener('click', async () => {
         try {
             const clipboardItems = await navigator.clipboard.read();
@@ -212,7 +317,6 @@ function bindEvents(router) {
         }
     });
 
-    // 全局粘贴事件
     document.addEventListener('paste', async (e) => {
         const file = getImageFile(e.clipboardData);
         if (file) {
@@ -221,7 +325,6 @@ function bindEvents(router) {
         }
     });
 
-    // 复制结果
     document.getElementById('btn-copy-result').addEventListener('click', async () => {
         const text = document.getElementById('qr-result-text').textContent;
         if (!text) return;
@@ -232,11 +335,33 @@ function bindEvents(router) {
             showToast(t('toastCopyFail'));
         }
     });
+
+    // 清空历史
+    document.getElementById('btn-clear-history').addEventListener('click', () => {
+        clearHistory();
+        renderHistoryList();
+        showToast(t('qrHistoryCleared'));
+    });
+
+    // 历史列表点击（事件委托）
+    document.getElementById('qr-history-list').addEventListener('click', async (e) => {
+        const copyBtn = e.target.closest('.qr-history__copy');
+        if (copyBtn) {
+            const item = copyBtn.closest('.qr-history__item');
+            const result = item.dataset.result;
+            try {
+                await navigator.clipboard.writeText(result);
+                showToast(t('toastCopied'));
+            } catch {
+                showToast(t('toastCopyFail'));
+            }
+        }
+    });
 }
 
 async function handleFile(file) {
     try {
-        const { result, imgSrc } = await processImage(file);
+        const { result, imgSrc, thumbnail } = await processImage(file);
         const resultEl = document.getElementById('qr-result');
         const textEl = document.getElementById('qr-result-text');
         const imgEl = document.getElementById('qr-preview-img');
@@ -248,14 +373,16 @@ async function handleFile(file) {
         if (result) {
             textEl.textContent = result;
             actionsEl.innerHTML = '';
-            try {
-                new URL(result);
+            if (isUrl(result)) {
                 actionsEl.innerHTML = `
           <a class="btn btn--primary btn--sm" href="${result}" target="_blank" rel="noopener noreferrer">
             <span class="btn--icon">🔗</span> ${t('qrBtnOpen')}
           </a>
         `;
-            } catch { /* not a URL */ }
+            }
+            // 保存到历史并刷新列表
+            saveHistory(result, thumbnail);
+            renderHistoryList();
             showToast(t('qrToastSuccess'));
         } else {
             textEl.textContent = t('qrToastFail');
