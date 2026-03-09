@@ -1,6 +1,7 @@
 /**
  * 二维码识别工具页
  * 支持：文件上传、剪切板粘贴、拖拽上传
+ * 解码策略：BarcodeDetector API（原生，最强）→ jsQR 多分辨率降级
  */
 import jsQR from 'jsqr';
 import { t } from '../i18n.js';
@@ -13,28 +14,82 @@ function showToast(msg) {
 }
 
 /**
- * 从 ImageData 中识别二维码
+ * 用 jsQR 在指定缩放比例下尝试识别
  */
-function decodeQR(imageData) {
-    const code = jsQR(imageData.data, imageData.width, imageData.height);
+function tryJsQR(img, scale) {
+    const w = Math.round(img.width * scale);
+    const h = Math.round(img.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const code = jsQR(imageData.data, w, h);
     return code ? code.data : null;
 }
 
 /**
- * 将图片文件绘制到 canvas 并识别
+ * 用 jsQR 做二值化增强后尝试识别
+ */
+function tryJsQRBinarized(img) {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+        const val = gray < 128 ? 0 : 255;
+        data[i] = data[i + 1] = data[i + 2] = val;
+    }
+    const code = jsQR(data, canvas.width, canvas.height);
+    return code ? code.data : null;
+}
+
+/**
+ * 多策略解码：BarcodeDetector → jsQR 多分辨率 → jsQR 二值化
+ */
+async function decodeImage(img) {
+    // 策略 1：浏览器原生 BarcodeDetector（Chrome/Edge，识别能力最强）
+    if ('BarcodeDetector' in window) {
+        try {
+            const detector = new BarcodeDetector({ formats: ['qr_code'] });
+            const results = await detector.detect(img);
+            if (results.length > 0) return results[0].rawValue;
+        } catch { /* fall through */ }
+    }
+
+    // 策略 2：jsQR 多分辨率尝试
+    const scales = [1, 0.75, 0.5, 1.5, 2];
+    for (const scale of scales) {
+        const result = tryJsQR(img, scale);
+        if (result) return result;
+    }
+
+    // 策略 3：jsQR 二值化增强
+    return tryJsQRBinarized(img);
+}
+
+/**
+ * 将图片文件加载为 Image 元素并识别
  */
 function processImage(file) {
     return new Promise((resolve, reject) => {
         const img = new Image();
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const result = decodeQR(imageData);
-            resolve({ result, imgSrc: canvas.toDataURL() });
+        img.onload = async () => {
+            const previewCanvas = document.createElement('canvas');
+            const maxPreview = 400;
+            const ratio = Math.min(maxPreview / img.width, maxPreview / img.height, 1);
+            previewCanvas.width = Math.round(img.width * ratio);
+            previewCanvas.height = Math.round(img.height * ratio);
+            const pCtx = previewCanvas.getContext('2d');
+            pCtx.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
+
+            const result = await decodeImage(img);
+            resolve({ result, imgSrc: previewCanvas.toDataURL() });
         };
         img.onerror = () => reject(new Error('Failed to load image'));
         img.src = URL.createObjectURL(file);
@@ -51,7 +106,6 @@ function getImageFile(dataTransfer) {
             return item.getAsFile();
         }
     }
-    // fallback: check files
     const files = dataTransfer.files || [];
     for (const file of files) {
         if (file.type.startsWith('image/')) return file;
@@ -193,7 +247,6 @@ async function handleFile(file) {
 
         if (result) {
             textEl.textContent = result;
-            // 如果是 URL，显示打开链接按钮
             actionsEl.innerHTML = '';
             try {
                 new URL(result);
