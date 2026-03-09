@@ -19,6 +19,14 @@ export const tools = [
         tags: ['安全', '网络'],
         route: '/whitelist-diff',
     },
+    {
+        id: 'youtube-downloader',
+        nameKey: 'tool.youtube-downloader.name',
+        descKey: 'tool.youtube-downloader.desc',
+        icon: '📺',
+        tags: ['视频', '下载'],
+        route: '/youtube-downloader',
+    },
 ];
 
 /**
