@@ -1377,6 +1377,23 @@ a {
   background: var(--bg-glass);
 }
 
+.qr-history__delete {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.qr-history__delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
 /* --- Responsive --- */
 @media (max-width: 768px) {
   .site-header {
