@@ -45,3 +45,17 @@ export function filterByTag(tag) {
     if (!tag) return tools;
     return tools.filter((t) => t.tags.includes(tag));
 }
+
+/**
+ * 模糊搜索工具（匹配名称、描述、标签）
+ */
+export function searchTools(keyword, t) {
+    if (!keyword) return tools;
+    const q = keyword.toLowerCase();
+    return tools.filter((tool) => {
+        const name = t(tool.nameKey).toLowerCase();
+        const desc = t(tool.descKey).toLowerCase();
+        const tags = tool.tags.map((tag) => t('tag.' + tag).toLowerCase()).join(' ');
+        return name.includes(q) || desc.includes(q) || tags.includes(q);
+    });
+}
