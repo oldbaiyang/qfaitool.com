@@ -5,6 +5,7 @@ import { renderHome } from './pages/home.js';
 import { renderDomainConverter } from './pages/domain-converter.js';
 import { renderWhitelistDiff } from './pages/whitelist-diff.js';
 import { renderYoutubeDownloader } from './pages/youtube-downloader.js';
+import { renderQrScanner } from './pages/qr-scanner.js';
 import { initTheme } from './theme.js';
 import { setLang, t } from './i18n.js';
 
@@ -28,6 +29,10 @@ const pageMeta = {
   '/youtube-downloader': () => ({
     title: `${t('ytTitle')} | QFAITool`,
     desc: t('ytDesc'),
+  }),
+  '/qr-scanner': () => ({
+    title: `${t('qrTitle')} | QFAITool`,
+    desc: t('qrDesc'),
   }),
 };
 
@@ -53,7 +58,8 @@ router
   .register('/', (path) => renderLayout(renderHome, path))
   .register('/domain-converter', (path) => renderLayout(renderDomainConverter, path))
   .register('/whitelist-diff', (path) => renderLayout(renderWhitelistDiff, path))
-  .register('/youtube-downloader', (path) => renderLayout(renderYoutubeDownloader, path));
+  .register('/youtube-downloader', (path) => renderLayout(renderYoutubeDownloader, path))
+  .register('/qr-scanner', (path) => renderLayout(renderQrScanner, path));
 
 // 语言切换（事件委托，切换后重新渲染当前页面）
 document.addEventListener('change', (e) => {

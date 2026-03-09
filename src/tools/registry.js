@@ -27,6 +27,14 @@ export const tools = [
         tags: ['视频', '下载'],
         route: '/youtube-downloader',
     },
+    {
+        id: 'qr-scanner',
+        nameKey: 'tool.qr-scanner.name',
+        descKey: 'tool.qr-scanner.desc',
+        icon: '📷',
+        tags: ['图片', '工具'],
+        route: '/qr-scanner',
+    },
 ];
 
 /**
