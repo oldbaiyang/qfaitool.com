@@ -1107,6 +1107,25 @@ a {
   justify-content: center;
 }
 
+.qr-drop-zone__preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.qr-drop-zone__preview-img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: var(--radius-md);
+  object-fit: contain;
+}
+
+.qr-drop-zone__re-upload {
+  font-size: var(--font-size-xs);
+}
+
 .qr-drop-zone--active,
 .qr-drop-zone:hover {
   border-color: var(--accent-primary);

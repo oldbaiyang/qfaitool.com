@@ -198,7 +198,7 @@ export function renderQrScanner(router) {
       <div class="qr-workspace">
         <!-- 上传区 -->
         <div class="qr-drop-zone" id="qr-drop-zone">
-          <div class="qr-drop-zone__content">
+          <div class="qr-drop-zone__content" id="qr-upload-content">
             <span class="qr-drop-zone__icon">📷</span>
             <p class="qr-drop-zone__hint">${t('qrDropHint')}</p>
             <div class="qr-drop-zone__actions">
@@ -211,6 +211,11 @@ export function renderQrScanner(router) {
             </div>
             <input type="file" id="qr-file-input" accept="image/*" style="display:none;" />
           </div>
+          <div class="qr-drop-zone__preview" id="qr-upload-preview" style="display:none;">
+            <img id="qr-preview-img" class="qr-drop-zone__preview-img" src="" alt="QR" />
+            <label class="btn btn--ghost btn--sm qr-drop-zone__re-upload" for="qr-file-input">重新上传</label>
+            <input type="file" id="qr-file-input-2" accept="image/*" style="display:none;" />
+          </div>
         </div>
 
         <!-- 识别结果 -->
@@ -219,19 +224,14 @@ export function renderQrScanner(router) {
             <p>${t('qrResultPlaceholder')}</p>
           </div>
           <div class="qr-result__body" id="qr-result-body" style="display:none;">
-            <div class="qr-result__preview">
-              <img id="qr-preview-img" class="qr-result__img" src="" alt="QR code" />
+            <label class="converter-panel__label">${t('qrResultLabel')}</label>
+            <div class="qr-result__text-wrap">
+              <pre class="qr-result__text" id="qr-result-text"></pre>
+              <button class="btn btn--secondary btn--sm qr-copy-btn" id="btn-copy-result">
+                <span class="btn--icon">📋</span> ${t('btnCopy')}
+              </button>
             </div>
-            <div class="qr-result__content">
-              <label class="converter-panel__label">${t('qrResultLabel')}</label>
-              <div class="qr-result__text-wrap">
-                <pre class="qr-result__text" id="qr-result-text"></pre>
-                <button class="btn btn--secondary btn--sm qr-copy-btn" id="btn-copy-result">
-                  <span class="btn--icon">📋</span> ${t('btnCopy')}
-                </button>
-              </div>
-              <div class="qr-result__actions" id="qr-result-actions"></div>
-            </div>
+            <div class="qr-result__actions" id="qr-result-actions"></div>
           </div>
         </div>
       </div>
@@ -403,8 +403,15 @@ async function handleFile(file) {
     const textEl = document.getElementById('qr-result-text');
     const imgEl = document.getElementById('qr-preview-img');
     const actionsEl = document.getElementById('qr-result-actions');
+    const uploadContent = document.getElementById('qr-upload-content');
+    const uploadPreview = document.getElementById('qr-upload-preview');
 
+    // 上传区显示图片预览
     imgEl.src = imgSrc;
+    uploadContent.style.display = 'none';
+    uploadPreview.style.display = '';
+
+    // 结果区显示文本
     placeholderEl.style.display = 'none';
     bodyEl.style.display = '';
 
