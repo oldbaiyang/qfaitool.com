@@ -228,41 +228,48 @@ export function renderQrScanner(router) {
         </div>
       </div>
 
-      <!-- 功能介绍 -->
-      <div class="qr-features">
-        <h2 class="qr-features__title">${t('qrFeaturesTitle')}</h2>
-        <div class="qr-features__grid">
-          <div class="qr-feature-card">
-            <span class="qr-feature-card__icon">🔒</span>
-            <h3 class="qr-feature-card__title">${t('qrFeature1Title')}</h3>
-            <p class="qr-feature-card__desc">${t('qrFeature1Desc')}</p>
-          </div>
-          <div class="qr-feature-card">
-            <span class="qr-feature-card__icon">⚡</span>
-            <h3 class="qr-feature-card__title">${t('qrFeature2Title')}</h3>
-            <p class="qr-feature-card__desc">${t('qrFeature2Desc')}</p>
-          </div>
-          <div class="qr-feature-card">
-            <span class="qr-feature-card__icon">📋</span>
-            <h3 class="qr-feature-card__title">${t('qrFeature3Title')}</h3>
-            <p class="qr-feature-card__desc">${t('qrFeature3Desc')}</p>
-          </div>
-          <div class="qr-feature-card">
-            <span class="qr-feature-card__icon">🕐</span>
-            <h3 class="qr-feature-card__title">${t('qrFeature4Title')}</h3>
-            <p class="qr-feature-card__desc">${t('qrFeature4Desc')}</p>
-          </div>
+      <!-- Tab 切换区 -->
+      <div class="qr-tabs">
+        <div class="qr-tabs__nav">
+          <button class="qr-tabs__btn qr-tabs__btn--active" data-tab="features">${t('qrFeaturesTitle')}</button>
+          <button class="qr-tabs__btn" data-tab="history">${t('qrHistoryTitle')}</button>
         </div>
-      </div>
 
-      <!-- 最近解码历史 -->
-      <div class="qr-history">
-        <div class="qr-history__header">
-          <h2 class="qr-history__title">${t('qrHistoryTitle')}</h2>
-          <button class="btn btn--ghost btn--sm" id="btn-clear-history" style="display:none;">${t('qrHistoryClear')}</button>
+        <!-- Tab: 功能介绍 -->
+        <div class="qr-tabs__panel" id="tab-features">
+          <div class="qr-features__grid">
+            <div class="qr-feature-card">
+              <span class="qr-feature-card__icon">🔒</span>
+              <h3 class="qr-feature-card__title">${t('qrFeature1Title')}</h3>
+              <p class="qr-feature-card__desc">${t('qrFeature1Desc')}</p>
+            </div>
+            <div class="qr-feature-card">
+              <span class="qr-feature-card__icon">⚡</span>
+              <h3 class="qr-feature-card__title">${t('qrFeature2Title')}</h3>
+              <p class="qr-feature-card__desc">${t('qrFeature2Desc')}</p>
+            </div>
+            <div class="qr-feature-card">
+              <span class="qr-feature-card__icon">📋</span>
+              <h3 class="qr-feature-card__title">${t('qrFeature3Title')}</h3>
+              <p class="qr-feature-card__desc">${t('qrFeature3Desc')}</p>
+            </div>
+            <div class="qr-feature-card">
+              <span class="qr-feature-card__icon">🕐</span>
+              <h3 class="qr-feature-card__title">${t('qrFeature4Title')}</h3>
+              <p class="qr-feature-card__desc">${t('qrFeature4Desc')}</p>
+            </div>
+          </div>
         </div>
-        <div class="qr-history__list" id="qr-history-list"></div>
-        <p class="qr-history__empty" id="qr-history-empty">${t('qrHistoryEmpty')}</p>
+
+        <!-- Tab: 最近解码 -->
+        <div class="qr-tabs__panel" id="tab-history" style="display:none;">
+          <div class="qr-history__header">
+            <span></span>
+            <button class="btn btn--ghost btn--sm" id="btn-clear-history" style="display:none;">${t('qrHistoryClear')}</button>
+          </div>
+          <div class="qr-history__list" id="qr-history-list"></div>
+          <p class="qr-history__empty" id="qr-history-empty">${t('qrHistoryEmpty')}</p>
+        </div>
       </div>
     </div>
 
@@ -334,6 +341,19 @@ function bindEvents(router) {
         } catch {
             showToast(t('toastCopyFail'));
         }
+    });
+
+    // Tab 切换
+    document.querySelector('.qr-tabs__nav').addEventListener('click', (e) => {
+        const btn = e.target.closest('.qr-tabs__btn');
+        if (!btn) return;
+        const tab = btn.dataset.tab;
+        // 切换按钮激活态
+        document.querySelectorAll('.qr-tabs__btn').forEach((b) => b.classList.remove('qr-tabs__btn--active'));
+        btn.classList.add('qr-tabs__btn--active');
+        // 切换面板
+        document.querySelectorAll('.qr-tabs__panel').forEach((p) => (p.style.display = 'none'));
+        document.getElementById(`tab-${tab}`).style.display = '';
     });
 
     // 清空历史

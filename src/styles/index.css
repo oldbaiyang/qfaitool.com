@@ -1184,6 +1184,56 @@ a {
   gap: var(--space-3);
 }
 
+/* QR Tabs */
+.qr-tabs {
+  margin-bottom: var(--space-8);
+}
+
+.qr-tabs__nav {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--border-card);
+  margin-bottom: var(--space-5);
+}
+
+.qr-tabs__btn {
+  padding: var(--space-3) var(--space-5);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition-fast);
+  margin-bottom: -1px;
+}
+
+.qr-tabs__btn:hover {
+  color: var(--text-primary);
+}
+
+.qr-tabs__btn--active {
+  color: var(--text-accent);
+  border-bottom-color: var(--accent-primary);
+}
+
+.qr-tabs__panel {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* QR Features */
 .qr-features {
   margin-bottom: var(--space-8);
