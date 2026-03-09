@@ -194,38 +194,45 @@ export function renderQrScanner(router) {
         <p class="tool-page__desc">${t('qrDesc')}</p>
       </div>
 
-      <!-- 上传区 -->
-      <div class="qr-drop-zone" id="qr-drop-zone">
-        <div class="qr-drop-zone__content">
-          <span class="qr-drop-zone__icon">📷</span>
-          <p class="qr-drop-zone__text">${t('qrDropText')}</p>
-          <p class="qr-drop-zone__hint">${t('qrDropHint')}</p>
-          <div class="qr-drop-zone__actions">
-            <label class="btn btn--primary btn--md" for="qr-file-input">
-              <span class="btn--icon">📁</span> ${t('qrBtnUpload')}
-            </label>
-            <button class="btn btn--secondary btn--md" id="btn-paste">
-              <span class="btn--icon">📋</span> ${t('qrBtnPaste')}
-            </button>
+      <!-- 工作区：上传 + 结果 -->
+      <div class="qr-workspace">
+        <!-- 上传区 -->
+        <div class="qr-drop-zone" id="qr-drop-zone">
+          <div class="qr-drop-zone__content">
+            <span class="qr-drop-zone__icon">📷</span>
+            <p class="qr-drop-zone__hint">${t('qrDropHint')}</p>
+            <div class="qr-drop-zone__actions">
+              <label class="btn btn--primary btn--sm" for="qr-file-input">
+                <span class="btn--icon">📁</span> ${t('qrBtnUpload')}
+              </label>
+              <button class="btn btn--secondary btn--sm" id="btn-paste">
+                <span class="btn--icon">📋</span> ${t('qrBtnPaste')}
+              </button>
+            </div>
+            <input type="file" id="qr-file-input" accept="image/*" style="display:none;" />
           </div>
-          <input type="file" id="qr-file-input" accept="image/*" style="display:none;" />
         </div>
-      </div>
 
-      <!-- 识别结果 -->
-      <div class="qr-result" id="qr-result" style="display:none;">
-        <div class="qr-result__preview">
-          <img id="qr-preview-img" class="qr-result__img" src="" alt="QR code" />
-        </div>
-        <div class="qr-result__content">
-          <label class="converter-panel__label">${t('qrResultLabel')}</label>
-          <div class="qr-result__text-wrap">
-            <pre class="qr-result__text" id="qr-result-text"></pre>
-            <button class="btn btn--secondary btn--sm qr-copy-btn" id="btn-copy-result">
-              <span class="btn--icon">📋</span> ${t('btnCopy')}
-            </button>
+        <!-- 识别结果 -->
+        <div class="qr-result" id="qr-result">
+          <div class="qr-result__placeholder" id="qr-result-placeholder">
+            <p>${t('qrResultPlaceholder')}</p>
           </div>
-          <div class="qr-result__actions" id="qr-result-actions"></div>
+          <div class="qr-result__body" id="qr-result-body" style="display:none;">
+            <div class="qr-result__preview">
+              <img id="qr-preview-img" class="qr-result__img" src="" alt="QR code" />
+            </div>
+            <div class="qr-result__content">
+              <label class="converter-panel__label">${t('qrResultLabel')}</label>
+              <div class="qr-result__text-wrap">
+                <pre class="qr-result__text" id="qr-result-text"></pre>
+                <button class="btn btn--secondary btn--sm qr-copy-btn" id="btn-copy-result">
+                  <span class="btn--icon">📋</span> ${t('btnCopy')}
+                </button>
+              </div>
+              <div class="qr-result__actions" id="qr-result-actions"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -391,13 +398,15 @@ function bindEvents(router) {
 async function handleFile(file) {
   try {
     const { result, imgSrc, thumbnail } = await processImage(file);
-    const resultEl = document.getElementById('qr-result');
+    const placeholderEl = document.getElementById('qr-result-placeholder');
+    const bodyEl = document.getElementById('qr-result-body');
     const textEl = document.getElementById('qr-result-text');
     const imgEl = document.getElementById('qr-preview-img');
     const actionsEl = document.getElementById('qr-result-actions');
 
     imgEl.src = imgSrc;
-    resultEl.style.display = '';
+    placeholderEl.style.display = 'none';
+    bodyEl.style.display = '';
 
     if (result) {
       textEl.textContent = result;
