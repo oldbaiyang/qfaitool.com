@@ -12,6 +12,7 @@
     "vite": "^6.1.0"
   },
   "dependencies": {
-    "jsqr": "^1.4.0"
+    "jsqr": "^1.4.0",
+    "pdfjs-dist": "^5.5.207"
   }
 }

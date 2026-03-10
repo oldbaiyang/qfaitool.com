@@ -1,10 +1,17 @@
 /**
  * 二维码识别工具页
- * 支持：文件上传、剪切板粘贴、拖拽上传
+ * 支持：文件上传（图片/PDF）、剪切板粘贴、拖拽上传
  * 解码策略：BarcodeDetector API（原生，最强）→ jsQR 多分辨率降级
  */
 import jsQR from 'jsqr';
+import * as pdfjsLib from 'pdfjs-dist';
 import { t } from '../i18n.js';
+
+// 配置 pdf.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.mjs',
+  import.meta.url,
+).toString();
 
 const HISTORY_KEY = 'qr-history';
 const MAX_HISTORY = 20;
@@ -84,25 +91,37 @@ function tryJsQRBinarized(img) {
   return code ? code.data : null;
 }
 
+/** 解码图像中的所有二维码，返回去重数组 */
 async function decodeImage(img) {
-  // 策略 1：浏览器原生 BarcodeDetector
+  const found = [];
+
+  // 策略 1：浏览器原生 BarcodeDetector（天然支持多结果）
   if ('BarcodeDetector' in window) {
     try {
       const detector = new BarcodeDetector({ formats: ['qr_code'] });
       const results = await detector.detect(img);
-      if (results.length > 0) return results[0].rawValue;
+      for (const r of results) {
+        if (r.rawValue && !found.includes(r.rawValue)) found.push(r.rawValue);
+      }
+      if (found.length > 0) return found;
     } catch { /* fall through */ }
   }
 
-  // 策略 2：jsQR 多分辨率
+  // 策略 2：jsQR 多分辨率（仅能识别单个，作为降级兜底）
   const scales = [1, 0.75, 0.5, 1.5, 2];
   for (const scale of scales) {
     const result = tryJsQR(img, scale);
-    if (result) return result;
+    if (result && !found.includes(result)) {
+      found.push(result);
+      return found;
+    }
   }
 
   // 策略 3：jsQR 二值化增强
-  return tryJsQRBinarized(img);
+  const binResult = tryJsQRBinarized(img);
+  if (binResult && !found.includes(binResult)) found.push(binResult);
+
+  return found;
 }
 
 function processImage(file) {
@@ -125,9 +144,9 @@ function processImage(file) {
       previewCanvas.height = Math.round(img.height * pRatio);
       previewCanvas.getContext('2d').drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
 
-      const result = await decodeImage(img);
+      const results = await decodeImage(img);
       resolve({
-        result,
+        results,
         imgSrc: previewCanvas.toDataURL(),
         thumbnail: thumbCanvas.toDataURL('image/jpeg', 0.6),
       });
@@ -137,14 +156,80 @@ function processImage(file) {
   });
 }
 
-function getImageFile(dataTransfer) {
+/** PDF 文件处理：逐页渲染并扫描所有二维码 */
+async function processPdf(file, onProgress) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const totalPages = pdf.numPages;
+  const allResults = [];
+  let firstPreviewSrc = null;
+  let firstThumbSrc = null;
+
+  // 每页尝试多个渲染倍率，提高识别率
+  const renderScales = [2, 3, 1.5, 1, 4];
+
+  for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+    if (onProgress) onProgress(pageNum, totalPages, allResults.length);
+
+    const page = await pdf.getPage(pageNum);
+    let pageResults = [];
+
+    for (const scale of renderScales) {
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      // 第一页、第一个倍率生成预览和缩略图
+      if (pageNum === 1 && !firstPreviewSrc) {
+        const previewCanvas = document.createElement('canvas');
+        const maxPreview = 400;
+        const pRatio = Math.min(maxPreview / canvas.width, maxPreview / canvas.height, 1);
+        previewCanvas.width = Math.round(canvas.width * pRatio);
+        previewCanvas.height = Math.round(canvas.height * pRatio);
+        previewCanvas.getContext('2d').drawImage(canvas, 0, 0, previewCanvas.width, previewCanvas.height);
+        firstPreviewSrc = previewCanvas.toDataURL();
+
+        const thumbCanvas = document.createElement('canvas');
+        const thumbSize = 80;
+        const tRatio = Math.min(thumbSize / canvas.width, thumbSize / canvas.height, 1);
+        thumbCanvas.width = Math.round(canvas.width * tRatio);
+        thumbCanvas.height = Math.round(canvas.height * tRatio);
+        thumbCanvas.getContext('2d').drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+        firstThumbSrc = thumbCanvas.toDataURL('image/jpeg', 0.6);
+      }
+
+      const bitmap = await createImageBitmap(canvas);
+      pageResults = await decodeImage(bitmap);
+      if (pageResults.length > 0) break; // 该倍率识别成功，跳出重试
+    }
+
+    for (const r of pageResults) {
+      if (!allResults.includes(r)) allResults.push(r);
+    }
+  }
+
+  return {
+    results: allResults,
+    imgSrc: firstPreviewSrc,
+    thumbnail: firstThumbSrc,
+  };
+}
+
+function isSupportedFile(type) {
+  return type.startsWith('image/') || type === 'application/pdf';
+}
+
+function getSupportedFile(dataTransfer) {
   const items = dataTransfer.items || [];
   for (const item of items) {
-    if (item.type.startsWith('image/')) return item.getAsFile();
+    if (isSupportedFile(item.type)) return item.getAsFile();
   }
   const files = dataTransfer.files || [];
   for (const file of files) {
-    if (file.type.startsWith('image/')) return file;
+    if (isSupportedFile(file.type)) return file;
   }
   return null;
 }
@@ -209,12 +294,12 @@ export function renderQrScanner(router) {
                 <span class="btn--icon">📋</span> ${t('qrBtnPaste')}
               </button>
             </div>
-            <input type="file" id="qr-file-input" accept="image/*" style="display:none;" />
+            <input type="file" id="qr-file-input" accept="image/*,.pdf" style="display:none;" />
           </div>
           <div class="qr-drop-zone__preview" id="qr-upload-preview" style="display:none;">
             <img id="qr-preview-img" class="qr-drop-zone__preview-img" src="" alt="QR" />
             <label class="btn btn--ghost btn--sm qr-drop-zone__re-upload" for="qr-file-input">重新上传</label>
-            <input type="file" id="qr-file-input-2" accept="image/*" style="display:none;" />
+            <input type="file" id="qr-file-input-2" accept="image/*,.pdf" style="display:none;" />
           </div>
         </div>
 
@@ -224,14 +309,13 @@ export function renderQrScanner(router) {
             <p>${t('qrResultPlaceholder')}</p>
           </div>
           <div class="qr-result__body" id="qr-result-body" style="display:none;">
-            <label class="converter-panel__label">${t('qrResultLabel')}</label>
-            <div class="qr-result__text-wrap">
-              <pre class="qr-result__text" id="qr-result-text"></pre>
-              <button class="btn btn--secondary btn--sm qr-copy-btn" id="btn-copy-result">
-                <span class="btn--icon">📋</span> ${t('btnCopy')}
+            <div class="qr-result__header">
+              <label class="converter-panel__label" id="qr-result-label">${t('qrResultLabel')}</label>
+              <button class="btn btn--secondary btn--sm" id="btn-copy-all">
+                <span class="btn--icon">📋</span> ${t('qrBtnCopyAll')}
               </button>
             </div>
-            <div class="qr-result__actions" id="qr-result-actions"></div>
+            <div class="qr-result__list" id="qr-result-list"></div>
           </div>
         </div>
       </div>
@@ -311,7 +395,7 @@ function bindEvents(router) {
   dropZone.addEventListener('drop', async (e) => {
     e.preventDefault();
     dropZone.classList.remove('qr-drop-zone--active');
-    const file = getImageFile(e.dataTransfer);
+    const file = getSupportedFile(e.dataTransfer);
     if (file) await handleFile(file);
   });
 
@@ -333,16 +417,30 @@ function bindEvents(router) {
   });
 
   document.addEventListener('paste', async (e) => {
-    const file = getImageFile(e.clipboardData);
+    const file = getSupportedFile(e.clipboardData);
     if (file) {
       e.preventDefault();
       await handleFile(file);
     }
   });
 
-  document.getElementById('btn-copy-result').addEventListener('click', async () => {
-    const text = document.getElementById('qr-result-text').textContent;
-    if (!text) return;
+  document.getElementById('btn-copy-all').addEventListener('click', async () => {
+    const items = document.querySelectorAll('.qr-result-item__text');
+    const texts = Array.from(items).map((el) => el.textContent).join('\n');
+    if (!texts) return;
+    try {
+      await navigator.clipboard.writeText(texts);
+      showToast(t('toastCopied'));
+    } catch {
+      showToast(t('toastCopyFail'));
+    }
+  });
+
+  // 结果列表点击（事件委托：单条复制）
+  document.getElementById('qr-result-list').addEventListener('click', async (e) => {
+    const copyBtn = e.target.closest('.qr-result-item__copy');
+    if (!copyBtn) return;
+    const text = copyBtn.dataset.value;
     try {
       await navigator.clipboard.writeText(text);
       showToast(t('toastCopied'));
@@ -397,12 +495,30 @@ function bindEvents(router) {
 
 async function handleFile(file) {
   try {
-    const { result, imgSrc, thumbnail } = await processImage(file);
+    const isPdf = file.type === 'application/pdf' || (file.name && file.name.toLowerCase().endsWith('.pdf'));
+
     const placeholderEl = document.getElementById('qr-result-placeholder');
     const bodyEl = document.getElementById('qr-result-body');
-    const textEl = document.getElementById('qr-result-text');
+    const listEl = document.getElementById('qr-result-list');
+    const labelEl = document.getElementById('qr-result-label');
+    const copyAllBtn = document.getElementById('btn-copy-all');
+
+    // PDF 扫描时先显示进度
+    if (isPdf) {
+      placeholderEl.style.display = 'none';
+      bodyEl.style.display = '';
+      copyAllBtn.style.display = 'none';
+      labelEl.textContent = t('qrResultLabel');
+      listEl.innerHTML = `<div class="qr-scan-progress"><span class="qr-scan-progress__spinner"></span><span id="qr-scan-status">${t('qrPdfScanning', 1, '...')}</span></div>`;
+    }
+
+    const { results, imgSrc, thumbnail } = isPdf
+      ? await processPdf(file, (page, total, found) => {
+        const statusEl = document.getElementById('qr-scan-status');
+        if (statusEl) statusEl.textContent = t('qrPdfScanning', page, total) + (found > 0 ? ` | ${t('qrFoundCount', found)}` : '');
+      })
+      : await processImage(file);
     const imgEl = document.getElementById('qr-preview-img');
-    const actionsEl = document.getElementById('qr-result-actions');
     const uploadContent = document.getElementById('qr-upload-content');
     const uploadPreview = document.getElementById('qr-upload-preview');
 
@@ -411,27 +527,38 @@ async function handleFile(file) {
     uploadContent.style.display = 'none';
     uploadPreview.style.display = '';
 
-    // 结果区显示文本
+    // 结果区
     placeholderEl.style.display = 'none';
     bodyEl.style.display = '';
 
-    if (result) {
-      textEl.textContent = result;
-      actionsEl.innerHTML = '';
-      if (isUrl(result)) {
-        actionsEl.innerHTML = `
-          <a class="btn btn--primary btn--sm" href="${result}" target="_blank" rel="noopener noreferrer">
-            <span class="btn--icon">🔗</span> ${t('qrBtnOpen')}
-          </a>
+    if (results.length > 0) {
+      copyAllBtn.style.display = '';
+      labelEl.textContent = `${t('qrResultLabel')}（${results.length}）`;
+      listEl.innerHTML = results.map((r, i) => {
+        const urlLink = isUrl(r)
+          ? `<a class="qr-result-item__link" href="${r}" target="_blank" rel="noopener noreferrer">🔗</a>`
+          : '';
+        return `
+          <div class="qr-result-item">
+            <span class="qr-result-item__index">${i + 1}</span>
+            <pre class="qr-result-item__text">${r}</pre>
+            <div class="qr-result-item__actions">
+              ${urlLink}
+              <button class="qr-result-item__copy" data-value="${r.replace(/"/g, '&quot;')}" title="${t('btnCopy')}">📋</button>
+            </div>
+          </div>
         `;
+      }).join('');
+
+      // 每条结果独立保存到历史
+      for (const r of results) {
+        saveHistory(r, thumbnail);
       }
-      // 保存到历史并刷新列表
-      saveHistory(result, thumbnail);
       renderHistoryList();
-      showToast(t('qrToastSuccess'));
+      showToast(t('qrToastSuccess', results.length));
     } else {
-      textEl.textContent = t('qrToastFail');
-      actionsEl.innerHTML = '';
+      labelEl.textContent = t('qrResultLabel');
+      listEl.innerHTML = `<div class="qr-result-item qr-result-item--empty"><pre class="qr-result-item__text">${t('qrToastFail')}</pre></div>`;
       showToast(t('qrToastFail'));
     }
   } catch {
