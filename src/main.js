@@ -6,6 +6,7 @@ import { renderDomainConverter } from './pages/domain-converter.js';
 import { renderWhitelistDiff } from './pages/whitelist-diff.js';
 import { renderYoutubeDownloader } from './pages/youtube-downloader.js';
 import { renderQrScanner } from './pages/qr-scanner.js';
+import { renderImageCompressor } from './pages/image-compressor.js';
 import { initTheme } from './theme.js';
 import { setLang, t } from './i18n.js';
 
@@ -34,6 +35,10 @@ const pageMeta = {
     title: `${t('qrTitle')} | QFAITool`,
     desc: t('qrDesc'),
   }),
+  '/image-compressor': () => ({
+    title: `${t('icTitle')} | QFAITool`,
+    desc: t('icDesc'),
+  }),
 };
 
 function updateMeta(path) {
@@ -59,7 +64,8 @@ router
   .register('/domain-converter', (path) => renderLayout(renderDomainConverter, path))
   .register('/whitelist-diff', (path) => renderLayout(renderWhitelistDiff, path))
   .register('/youtube-downloader', (path) => renderLayout(renderYoutubeDownloader, path))
-  .register('/qr-scanner', (path) => renderLayout(renderQrScanner, path));
+  .register('/qr-scanner', (path) => renderLayout(renderQrScanner, path))
+  .register('/image-compressor', (path) => renderLayout(renderImageCompressor, path));
 
 // 语言切换（事件委托，切换后重新渲染当前页面）
 document.addEventListener('change', (e) => {

@@ -35,6 +35,14 @@ export const tools = [
         tags: ['图片', '工具'],
         route: '/qr-scanner',
     },
+    {
+        id: 'image-compressor',
+        nameKey: 'tool.image-compressor.name',
+        descKey: 'tool.image-compressor.desc',
+        icon: '🖼️',
+        tags: ['图片', '工具'],
+        route: '/image-compressor',
+    },
 ];
 
 /**
