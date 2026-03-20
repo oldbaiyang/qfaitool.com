@@ -4,13 +4,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-QFAITool is a Single Page Application (SPA) built with vanilla JavaScript and Vite. It provides utility tools for domain conversion and whitelist comparison with a modern, responsive UI.
+QFAITool is a Single Page Application (SPA) built with vanilla JavaScript and Vite. It provides utility tools including domain conversion, whitelist comparison, image compression, QR code scanning, and AI-powered image background removal.
 
 ## Development Commands
 
 - `npm run dev` - Start Vite dev server (runs on port 3000)
 - `npm run build` - Build for production (outputs to `dist/`)
 - `npm run preview` - Preview production build
+
+### Local Development with API Proxy
+
+Some tools (like Remove BG) require API calls. For local development:
+
+```bash
+# Terminal 1: Start the local API proxy server
+export REMOVE_BG_API_KEY=your_api_key
+node api/local-remove-bg-server.js
+
+# Terminal 2: Start Vite dev server
+npm run dev
+```
+
+The Vite dev server proxies `/api/remove-bg` requests to `http://localhost:3001`.
 
 ## Architecture
 
@@ -38,11 +53,16 @@ src/
 │   ├── whitelist-diff.js    # Whitelist comparison tool
 │   ├── youtube-downloader.js # YouTube video downloader
 │   ├── qr-scanner.js         # QR code scanner (supports image/PDF)
-│   └── image-compressor.js   # Image compression tool
+│   ├── image-compressor.js   # Image compression tool
+│   └── remove-bg.js         # AI-powered image background removal
 ├── styles/             # Global styles
 │   └── index.css       # Main stylesheet with design tokens (CSS variables)
 └── tools/
     └── registry.js     # Tool registry for managing available tools
+
+api/                    # Vercel Serverless Functions
+├── remove-bg.js        # Remove.bg API proxy (protects API key)
+└── local-remove-bg-server.js  # Local development proxy server
 ```
 
 ### Key Architecture Patterns
@@ -127,3 +147,15 @@ SEO meta tags are defined in `index.html` and dynamically updated via the `pageM
 - Both use localStorage for persistence
 - Theme toggle updates `data-theme` attribute on `<html>` element
 - Language change triggers page re-render via router
+
+### Remove.bg Integration
+
+The Remove BG tool uses the Remove.bg API to remove image backgrounds. For security:
+
+1. **API key protection**: The API key is stored in Vercel environment variables (`REMOVE_BG_API_KEY`) and only accessed server-side via `api/remove-bg.js`
+2. **Production**: Vercel Serverless Function handles API calls
+3. **Local development**: Use `api/local-remove-bg-server.js` as a proxy
+
+**Deploying to Vercel:**
+1. Add `REMOVE_BG_API_KEY` environment variable in Vercel project settings
+2. The `api/remove-bg.js` file is automatically recognized as a serverless function
