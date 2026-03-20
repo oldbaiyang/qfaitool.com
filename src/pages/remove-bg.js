@@ -50,6 +50,14 @@ export function renderRemoveBg(router) {
         </div>
       </div>
     </div>
+
+    <!-- 图片预览弹窗 -->
+    <div id="rb-modal" class="rb-modal" style="display:none">
+      <div class="rb-modal__content">
+        <button id="rb-modal-close" class="rb-modal__close">✕</button>
+        <img id="rb-modal-img" src="" alt="Preview">
+      </div>
+    </div>
   `;
 
   bindEvents();
@@ -65,18 +73,43 @@ function bindEvents() {
   const processBtn = document.getElementById('rb-process');
   const downloadBtn = document.getElementById('rb-download');
   const clearBtn = document.getElementById('rb-clear');
+  const modal = document.getElementById('rb-modal');
+  const modalImg = document.getElementById('rb-modal-img');
+  const modalClose = document.getElementById('rb-modal-close');
 
   // 点击上传/预览区域
   dropzone.addEventListener('click', (e) => {
     e.stopPropagation();
-    // 如果有结果图，点击打开预览
+    // 如果有结果图，点击打开弹窗预览
     if (resultBlob) {
       const url = URL.createObjectURL(resultBlob);
-      window.open(url, '_blank');
+      modalImg.src = url;
+      modal.style.display = 'flex';
       return;
     }
     // 否则触发上传
     fileInput.click();
+  });
+
+  // 点击预览图打开弹窗
+  previewImg.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (resultBlob) {
+      const url = URL.createObjectURL(resultBlob);
+      modalImg.src = url;
+      modal.style.display = 'flex';
+    }
+  });
+
+  // 关闭弹窗
+  modalClose.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
   });
 
   fileInput.addEventListener('change', (e) => {
