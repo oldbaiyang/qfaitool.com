@@ -43,6 +43,14 @@ export const tools = [
         tags: ['图片', '工具'],
         route: '/image-compressor',
     },
+    {
+        id: 'remove-bg',
+        nameKey: 'tool.remove-bg.name',
+        descKey: 'tool.remove-bg.desc',
+        icon: '✂️',
+        tags: ['图片', '工具'],
+        route: '/remove-bg',
+    },
 ];
 
 /**

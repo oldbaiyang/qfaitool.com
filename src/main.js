@@ -7,6 +7,7 @@ import { renderWhitelistDiff } from './pages/whitelist-diff.js';
 import { renderYoutubeDownloader } from './pages/youtube-downloader.js';
 import { renderQrScanner } from './pages/qr-scanner.js';
 import { renderImageCompressor } from './pages/image-compressor.js';
+import { renderRemoveBg } from './pages/remove-bg.js';
 import { initTheme } from './theme.js';
 import { setLang, t } from './i18n.js';
 
@@ -39,6 +40,10 @@ const pageMeta = {
     title: `${t('icTitle')} | QFAITool`,
     desc: t('icDesc'),
   }),
+  '/remove-bg': () => ({
+    title: `${t('rbTitle')} | QFAITool`,
+    desc: t('rbDesc'),
+  }),
 };
 
 function updateMeta(path) {
@@ -65,7 +70,8 @@ router
   .register('/whitelist-diff', (path) => renderLayout(renderWhitelistDiff, path))
   .register('/youtube-downloader', (path) => renderLayout(renderYoutubeDownloader, path))
   .register('/qr-scanner', (path) => renderLayout(renderQrScanner, path))
-  .register('/image-compressor', (path) => renderLayout(renderImageCompressor, path));
+  .register('/image-compressor', (path) => renderLayout(renderImageCompressor, path))
+  .register('/remove-bg', (path) => renderLayout(renderRemoveBg, path));
 
 // 语言切换（事件委托，切换后重新渲染当前页面）
 document.addEventListener('change', (e) => {

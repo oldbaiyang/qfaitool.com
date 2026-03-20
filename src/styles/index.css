@@ -1671,6 +1671,23 @@ a {
   transform: scale(1.1);
 }
 
+.ic-select {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: var(--bg-glass);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.ic-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
 .ic-actions {
   display: flex;
   flex-direction: column;
@@ -1780,4 +1797,317 @@ a {
 .ic-info span {
   font-weight: 700;
   color: var(--text-primary);
+}
+
+/* Remove BG - 透明背景预览（棋盘格） */
+.ic-preview-container--transparent {
+  background-image:
+    linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  background-color: #fff;
+}
+
+/* Remove BG - 加载状态 */
+.rb-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: var(--space-4);
+}
+
+.rb-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border-subtle);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Remove BG - 按钮组（放在上传区域下方） */
+.rb-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+/* Remove BG - 居中布局 */
+.rb-layout {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.rb-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 700px;
+}
+
+/* Remove BG - 正方形上传区域 */
+.rb-dropzone {
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 1 / 1;
+  border: 2px dashed var(--border-card);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+  cursor: pointer;
+  background: var(--bg-glass);
+}
+
+.rb-dropzone:hover {
+  border-color: var(--color-primary);
+  background: var(--bg-decoration-1);
+}
+
+.rb-dropzone--active {
+  background-color: var(--bg-decoration-1);
+  border-color: var(--text-accent);
+  transform: scale(1.02);
+}
+
+.rb-dropzone__content {
+  text-align: center;
+  padding: var(--space-4);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.rb-dropzone__icon {
+  font-size: 4rem;
+  margin-bottom: var(--space-3);
+  display: block;
+}
+
+.rb-dropzone__text {
+  font-size: var(--font-size-lg);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.rb-dropzone__hint {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* Remove BG - 按钮组 */
+.rb-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
+/* Remove BG - 大按钮 */
+.btn--large {
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--font-size-lg);
+}
+
+/* Remove BG - 上传预览 */
+.rb-dropzone__preview {
+  width: 100%;
+  height: 100%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.rb-dropzone__preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Remove BG - 图片信息 */
+.rb-info {
+  display: flex;
+  gap: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-2);
+}
+
+.rb-info span {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Remove BG - 加载状态 */
+.rb-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: var(--space-4);
+}
+
+.rb-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border-subtle);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Remove BG - 结果透明背景 */
+.rb-preview--transparent {
+  background-image:
+    linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  background-color: #fff;
+}
+
+@media (max-width: 768px) {
+  .rb-preview {
+    width: 200px;
+    height: 200px;
+  }
+}
+.rb-result {
+  width: 100%;
+}
+
+.rb-result__comparison {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+.rb-result__box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.rb-result__label {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.rb-result__arrow {
+  font-size: 2rem;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.rb-preview {
+  width: 300px;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.rb-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.rb-preview--transparent {
+  background-image:
+    linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  background-color: #fff;
+}
+
+.rb-result__meta {
+  display: flex;
+  gap: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.rb-result__meta span {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Remove BG - 加载状态 */
+.rb-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: var(--space-4);
+}
+
+.rb-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border-subtle);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .rb-result__comparison {
+    flex-direction: column;
+  }
+
+  .rb-result__arrow {
+    transform: rotate(90deg);
+  }
+
+  .rb-preview {
+    width: 200px;
+    height: 200px;
+  }
 }
