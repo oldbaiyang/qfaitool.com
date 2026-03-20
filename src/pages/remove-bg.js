@@ -171,10 +171,7 @@ function bindEvents() {
     document.getElementById('rb-preview-img').classList.remove('rb-preview--transparent');
     document.getElementById('rb-info').style.display = 'none';
     document.getElementById('rb-loading').style.display = 'none';
-    document.getElementById('rb-process').disabled = true;
     document.getElementById('rb-download').disabled = true;
-    // 清空后触发上传
-    fileInput.click();
   });
 }
 
@@ -195,7 +192,6 @@ async function handleFile(file) {
     };
     document.getElementById('rb-info').style.display = 'flex';
     // 启用去背景按钮
-    document.getElementById('rb-process').disabled = false;
   };
   reader.readAsDataURL(file);
 }
@@ -221,7 +217,6 @@ async function processImage() {
     document.getElementById('info-orig-size').textContent = formatSize(blob.size);
 
     loading.style.display = 'none';
-    document.getElementById('rb-process').disabled = true;
     document.getElementById('rb-download').disabled = false;
   } catch (err) {
     loading.style.display = 'none';
