@@ -61,13 +61,21 @@ let resultBlob = null;
 function bindEvents() {
   const fileInput = document.getElementById('rb-file-input');
   const dropzone = document.getElementById('rb-dropzone');
+  const previewImg = document.getElementById('rb-preview-img');
   const processBtn = document.getElementById('rb-process');
   const downloadBtn = document.getElementById('rb-download');
   const clearBtn = document.getElementById('rb-clear');
 
-  // 点击上传（整个 dropzone 区域都可点击）
+  // 点击上传/预览区域
   dropzone.addEventListener('click', (e) => {
     e.stopPropagation();
+    // 如果有结果图，点击打开预览
+    if (resultBlob) {
+      const url = URL.createObjectURL(resultBlob);
+      window.open(url, '_blank');
+      return;
+    }
+    // 否则触发上传
     fileInput.click();
   });
 
@@ -132,6 +140,8 @@ function bindEvents() {
     document.getElementById('rb-loading').style.display = 'none';
     document.getElementById('rb-process').disabled = true;
     document.getElementById('rb-download').disabled = true;
+    // 清空后触发上传
+    fileInput.click();
   });
 }
 
