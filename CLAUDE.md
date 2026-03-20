@@ -35,7 +35,10 @@ src/
 ├── pages/              # Page-specific components
 │   ├── home.js         # Home page with tool grid
 │   ├── domain-converter.js  # Domain conversion tool
-│   └── whitelist-diff.js    # Whitelist comparison tool
+│   ├── whitelist-diff.js    # Whitelist comparison tool
+│   ├── youtube-downloader.js # YouTube video downloader
+│   ├── qr-scanner.js         # QR code scanner (supports image/PDF)
+│   └── image-compressor.js   # Image compression tool
 ├── styles/             # Global styles
 │   └── index.css       # Main stylesheet with design tokens (CSS variables)
 └── tools/

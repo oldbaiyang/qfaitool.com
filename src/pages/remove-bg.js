@@ -29,6 +29,10 @@ export function renderRemoveBg(router) {
             <div id="rb-dropzone-preview" class="rb-dropzone__preview" style="display:none">
               <img id="rb-preview-img" src="" alt="Preview">
             </div>
+            <div id="rb-loading" class="rb-loading" style="display:none">
+              <div class="rb-spinner"></div>
+              <p>${t('rbProcessing')}</p>
+            </div>
             <input type="file" id="rb-file-input" accept="image/*" style="display:none">
           </div>
 
@@ -42,11 +46,6 @@ export function renderRemoveBg(router) {
           <div class="rb-actions">
             <button id="rb-download" class="btn btn--primary" disabled>${t('rbBtnDownload')}</button>
             <button id="rb-clear" class="btn btn--outline">${t('btnClear')}</button>
-          </div>
-
-          <div id="rb-loading" class="rb-loading" style="display:none">
-            <div class="rb-spinner"></div>
-            <p>${t('rbProcessing')}</p>
           </div>
         </div>
       </div>
@@ -196,18 +195,32 @@ async function removeBackground(file) {
   const formData = new FormData();
   formData.append('image_file', file);
 
-  const response = await fetch('/api/remove-bg', {
-    method: 'POST',
-    body: formData
-  });
+  let response;
+  try {
+    response = await fetch('/api/remove-bg', {
+      method: 'POST',
+      body: formData
+    });
+  } catch (err) {
+    console.error('Fetch error:', err);
+    throw new Error('网络请求失败，请检查网络连接');
+  }
 
   if (!response.ok) {
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      const err = await response.json();
-      throw new Error(err.error || err.message || '处理失败');
+    let errorMsg = `请求失败: ${response.status}`;
+    try {
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const err = await response.json();
+        errorMsg = err.error || err.message || errorMsg;
+      } else {
+        const text = await response.text();
+        if (text) errorMsg = text;
+      }
+    } catch (e) {
+      console.error('Error parsing response:', e);
     }
-    throw new Error(`请求失败: ${response.status}`);
+    throw new Error(errorMsg);
   }
 
   return await response.blob();
