@@ -51,6 +51,14 @@ export const tools = [
         tags: ['图片', '工具'],
         route: '/remove-bg',
     },
+    {
+        id: 'markdown-editor',
+        nameKey: 'tool.markdown-editor.name',
+        descKey: 'tool.markdown-editor.desc',
+        icon: '📝',
+        tags: ['工具', '开发'],
+        route: '/markdown-editor',
+    },
 ];
 
 /**

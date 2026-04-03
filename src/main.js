@@ -8,6 +8,7 @@ import { renderYoutubeDownloader } from './pages/youtube-downloader.js';
 import { renderQrScanner } from './pages/qr-scanner.js';
 import { renderImageCompressor } from './pages/image-compressor.js';
 import { renderRemoveBg } from './pages/remove-bg.js';
+import { renderMarkdownEditor } from './pages/markdown-editor.js';
 import { initTheme } from './theme.js';
 import { setLang, t } from './i18n.js';
 
@@ -44,6 +45,10 @@ const pageMeta = {
     title: `${t('rbTitle')} | QFAITool`,
     desc: t('rbDesc'),
   }),
+  '/markdown-editor': () => ({
+    title: `${t('mdTitle')} | QFAITool`,
+    desc: t('mdDesc'),
+  }),
 };
 
 function updateMeta(path) {
@@ -71,7 +76,8 @@ router
   .register('/youtube-downloader', (path) => renderLayout(renderYoutubeDownloader, path))
   .register('/qr-scanner', (path) => renderLayout(renderQrScanner, path))
   .register('/image-compressor', (path) => renderLayout(renderImageCompressor, path))
-  .register('/remove-bg', (path) => renderLayout(renderRemoveBg, path));
+  .register('/remove-bg', (path) => renderLayout(renderRemoveBg, path))
+  .register('/markdown-editor', (path) => renderLayout(renderMarkdownEditor, path));
 
 // 语言切换（事件委托，切换后重新渲染当前页面）
 document.addEventListener('change', (e) => {
