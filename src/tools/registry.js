@@ -59,6 +59,14 @@ export const tools = [
         tags: ['工具', '开发'],
         route: '/markdown-editor',
     },
+    {
+        id: 'image-to-pdf',
+        nameKey: 'tool.image-to-pdf.name',
+        descKey: 'tool.image-to-pdf.desc',
+        icon: '📄',
+        tags: ['图片', '工具'],
+        route: '/image-to-pdf',
+    },
 ];
 
 /**

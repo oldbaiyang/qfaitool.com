@@ -9,6 +9,7 @@ import { renderQrScanner } from './pages/qr-scanner.js';
 import { renderImageCompressor } from './pages/image-compressor.js';
 import { renderRemoveBg } from './pages/remove-bg.js';
 import { renderMarkdownEditor } from './pages/markdown-editor.js';
+import { renderImageToPdf } from './pages/image-to-pdf.js';
 import { initTheme } from './theme.js';
 import { setLang, t } from './i18n.js';
 
@@ -49,6 +50,10 @@ const pageMeta = {
     title: `${t('mdTitle')} | QFAITool`,
     desc: t('mdDesc'),
   }),
+  '/image-to-pdf': () => ({
+    title: `${t('ipTitle')} | QFAITool`,
+    desc: t('ipDesc'),
+  }),
 };
 
 function updateMeta(path) {
@@ -77,7 +82,8 @@ router
   .register('/qr-scanner', (path) => renderLayout(renderQrScanner, path))
   .register('/image-compressor', (path) => renderLayout(renderImageCompressor, path))
   .register('/remove-bg', (path) => renderLayout(renderRemoveBg, path))
-  .register('/markdown-editor', (path) => renderLayout(renderMarkdownEditor, path));
+  .register('/markdown-editor', (path) => renderLayout(renderMarkdownEditor, path))
+  .register('/image-to-pdf', (path) => renderLayout(renderImageToPdf, path));
 
 // 语言切换（事件委托，切换后重新渲染当前页面）
 document.addEventListener('change', (e) => {
