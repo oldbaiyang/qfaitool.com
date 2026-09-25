@@ -67,6 +67,14 @@ export const tools = [
         tags: ['图片', '工具'],
         route: '/image-to-pdf',
     },
+    {
+        id: 'badge-printer',
+        nameKey: 'tool.badge-printer.name',
+        descKey: 'tool.badge-printer.desc',
+        icon: '🎨',
+        tags: ['设计', '工具'],
+        route: '/badge-printer',
+    },
 ];
 
 /**
